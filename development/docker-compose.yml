@@ -33,15 +33,25 @@ services:
       RAILS_ENV: 'development'
 
       DF_STUDENT_WORK_DIR: /student-work
-      DF_INSTITUTION_HOST: http://localhost:3000
+      DF_INSTITUTION_HOST: http://localhost:4200
       DF_INSTITUTION_PRODUCT_NAME: OnTrack
 
       DF_SECRET_KEY_BASE: test-secret-key-test-secret-key!
       DF_SECRET_KEY_ATTR: test-secret-key-test-secret-key!
       DF_SECRET_KEY_DEVISE: test-secret-key-test-secret-key!
 
-      # Authentication method - can set to AAF or ldap
-      DF_AUTH_METHOD: database
+      # Authentication method - can set to database, ldap, aaf, or saml
+      DF_AUTH_METHOD: saml
+
+      # SAML (Keycloak) configuration for local dev on port 8080
+      # Use metadata or explicit settings below. Both can be present; explicit values are still required.
+      # Important: use the container name so the API can fetch metadata at startup
+      DF_SAML_METADATA_URL: http://doubtfire-keycloak:8080/realms/doubtfire/protocol/saml/descriptor
+      DF_SAML_CONSUMER_SERVICE_URL: http://localhost:3000/api/auth/jwt
+      DF_SAML_SP_ENTITY_ID: http://localhost:3000
+      DF_SAML_IDP_TARGET_URL: http://keycloak:8080/realms/doubtfire/protocol/saml
+      DF_SAML_IDP_SIGNOUT_URL: http://keycloak:8080/realms/doubtfire/protocol/saml/logout
+      
       DF_AAF_ISSUER_URL: https://rapid.test.aaf.edu.au
       DF_AAF_AUDIENCE_URL: http://localhost:3000
       DF_AAF_CALLBACK_URL: http://localhost:3000/api/auth/jwt
@@ -96,6 +106,20 @@ services:
       - ../doubtfire-web:/doubtfire-web
       - web_node_modules:/doubtfire-web/node_modules
 
+  keycloak:
+    container_name: doubtfire-keycloak
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev", "--http-port", "8080", "--hostname-strict=false", "--hostname", "localhost", "--hostname-strict=false"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+    ports:
+      - "8080:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
 volumes:
   web_node_modules:
   redis_sidekiq_data:
+  keycloak_data:

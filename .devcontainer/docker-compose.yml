@@ -20,6 +20,7 @@ services:
       - "9876:9876"
       - "4200:4200"
       - "3000:3000"
+      - "8080:8080"
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 5000; do :; done"
     env_file:
