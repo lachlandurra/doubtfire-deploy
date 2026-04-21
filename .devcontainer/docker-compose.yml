@@ -16,15 +16,31 @@ services:
       - web_node_modules:/workspace/doubtfire-web/node_modules
       - formatif_db_compose:/var/lib/mysql
       - formatif_gems_compose:/home/vscode/.gems
+      - formatif_claude_compose:/home/vscode/.claude
     ports:
       - "9876:9876"
       - "4200:4200"
       - "3000:3000"
-      - "8080:8080"
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 5000; do :; done"
     env_file:
       - devcontainer.env
+  keycloak:
+    container_name: doubtfire-keycloak
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev", "--http-port", "8080", "--hostname-strict=false", "--hostname", "localhost", "--hostname-strict=false"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: localhost
+    ports:
+      - "8080:8080"
+    networks:
+      default:
+        aliases:
+          - doubtfire-keycloak
+    volumes:
+      - keycloak_data:/opt/keycloak/data
 
 volumes:
   ws_node_modules:
@@ -33,3 +49,7 @@ volumes:
   formatif_student-work_compose:
   formatif_db_compose:
   formatif_gems_compose:
+  formatif_claude_compose:
+  keycloak_data:
+    external: true
+    name: development_keycloak_data

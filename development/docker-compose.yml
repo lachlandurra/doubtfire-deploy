@@ -27,6 +27,20 @@ services:
       - ../doubtfire-api/:/doubtfire
       - ../data/tmp:/doubtfire/tmp
       - ../data/student-work:/student-work
+    # Override the image's default CMD to fix two problems with the baked-in command:
+    #   1. No DB readiness wait — db:migrate fires before MariaDB is ready on cold start.
+    #   2. Roles are not created by migrations on a fresh DB (they were data inserted by
+    #      old migrations that are skipped on clean installs), so db:seed ensures they exist.
+    # db:seed uses find_or_create_by so it is safe to run on every startup.
+    command: >
+      /bin/sh -c "
+        rm -f tmp/pids/server.pid &&
+        until ruby -e 'require %q(socket); TCPSocket.new(%q(doubtfire-dev-db), 3306).close' 2>/dev/null; do
+          echo 'Waiting for DB...'; sleep 2;
+        done &&
+        bundle exec rake db:migrate db:seed &&
+        bundle exec rails s -b 0.0.0.0
+      "
     depends_on:
       - dev-db
     environment:
@@ -41,17 +55,8 @@ services:
       DF_SECRET_KEY_DEVISE: test-secret-key-test-secret-key!
 
       # Authentication method - can set to database, ldap, aaf, or saml
-      DF_AUTH_METHOD: saml
+      DF_AUTH_METHOD: database
 
-      # SAML (Keycloak) configuration for local dev on port 8080
-      # Use metadata or explicit settings below. Both can be present; explicit values are still required.
-      # Important: use the container name so the API can fetch metadata at startup
-      DF_SAML_METADATA_URL: http://doubtfire-keycloak:8080/realms/doubtfire/protocol/saml/descriptor
-      DF_SAML_CONSUMER_SERVICE_URL: http://localhost:3000/api/auth/jwt
-      DF_SAML_SP_ENTITY_ID: http://localhost:3000
-      DF_SAML_IDP_TARGET_URL: http://keycloak:8080/realms/doubtfire/protocol/saml
-      DF_SAML_IDP_SIGNOUT_URL: http://keycloak:8080/realms/doubtfire/protocol/saml/logout
-      
       DF_AAF_ISSUER_URL: https://rapid.test.aaf.edu.au
       DF_AAF_AUDIENCE_URL: http://localhost:3000
       DF_AAF_CALLBACK_URL: http://localhost:3000/api/auth/jwt
@@ -91,13 +96,23 @@ services:
       TII_ENABLED: false
 
       # Redis
-      DF_REDIS_SIDEKIQ_URL: redis://doubtfire-redis-sidekiq:6379/0
+      DF_REDIS_SIDEKIQ_URL: redis://doubtfire-redis-sidekiq:6379/0o
+
+      #GoogleOAuth
+      GOOGLE_CLIENT_ID: 1091815502751-gklgthqouekrmjo4r9p4kk4bi04o5ols.apps.googleusercontent.com
+      DF_KEYCLOAK_URL: http://doubtfire-keycloak:8080   # server-to-server (token exchange, JWKS)
+      DF_KEYCLOAK_PUBLIC_URL: http://localhost:8080   # browser-facing (OAuth redirects)
+      DF_KEYCLOAK_REALM: doubtfire
+      DF_KEYCLOAK_CLIENT_ID: doubtfire-link
+      DF_KEYCLOAK_CLIENT_SECRET: PDismW6yAb0Jvqhf7cTxejSYOx1TSAgj
+      DF_KEYCLOAK_LINK_CALLBACK: http://localhost:3000/api/auth/link/callback
+      DF_KEYCLOAK_SIGNIN_CALLBACK: http://localhost:3000/api/auth/google/callback
 
   doubtfire-web:
     container_name: doubtfire-web
     image: lmsdoubtfire/doubtfire-web:8.0-dev
     build: ../doubtfire-web
-    command: /bin/bash -c 'npm install; npm start'
+    command: /bin/bash -c 'npm install && npm run build:angular1 && NODE_OPTIONS=--max_old_space_size=4096 npx ng serve --configuration development --proxy-config proxy.conf.docker.json'
     ports:
       - "4200:4200"
     depends_on:
