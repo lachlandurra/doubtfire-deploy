@@ -36,4 +36,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+report-writing
+.claude/
+excalidraw.log
+doubtfire-deploy/
+
 # End of https://www.toptal.com/developers/gitignore/api/macos
