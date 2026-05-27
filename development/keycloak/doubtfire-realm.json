@@ -1,0 +1,32 @@
+{
+  "realm": "doubtfire",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "doubtfire-link",
+      "name": "OnTrack OIDC Client",
+      "description": "Confidential OIDC client used by the OnTrack API to broker Google OAuth. Secret must match DF_KEYCLOAK_CLIENT_SECRET in docker-compose.yml.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "PDismW6yAb0Jvqhf7cTxejSYOx1TSAgj",
+      "redirectUris": [
+        "http://localhost:3000/api/auth/google/callback",
+        "http://localhost:3000/api/auth/link/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
+      "fullScopeAllowed": true
+    }
+  ]
+}

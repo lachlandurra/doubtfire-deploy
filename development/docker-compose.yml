@@ -124,7 +124,10 @@ services:
   keycloak:
     container_name: doubtfire-keycloak
     image: quay.io/keycloak/keycloak:24.0
-    command: ["start-dev", "--http-port", "8080", "--hostname-strict=false", "--hostname", "localhost", "--hostname-strict=false"]
+    # --import-realm reads all *.json files from /opt/keycloak/data/import/ on startup.
+    # The doubtfire realm and doubtfire-link client are pre-created automatically on first boot.
+    # If the realm already exists in the keycloak_data volume the import is skipped (safe to restart).
+    command: ["start-dev", "--http-port", "8080", "--hostname", "localhost", "--hostname-strict=false", "--import-realm"]
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -133,6 +136,9 @@ services:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      # Bind-mount the realm JSON into the Keycloak import directory.
+      # Docker resolves overlapping mounts so the bind mount at the sub-path wins.
+      - ./keycloak:/opt/keycloak/data/import:ro
 
 volumes:
   web_node_modules:
