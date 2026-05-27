@@ -8,7 +8,7 @@ This fork of `doubtfire-deploy` carries three federated-identity prototypes that
 | --- | --- | --- | --- |
 | **A** | Direct OIDC against Google + GitHub | `feature/oidc-prototype-a` | `doubtfire-api: feature/oidc-prototype-a`, `doubtfire-web: feature/oidc-prototype-a` |
 | **B** | Keycloak broker (Google → Keycloak → OnTrack via OIDC) | `feature/prototype-b-evidence` | `doubtfire-api: feature/prototype-b-evidence-tests`, `doubtfire-web: feature/prototype-b` |
-| **C** | Email magic link (passwordless) | `feature/oidc-prototype-c` | `doubtfire-api: feature/prototype-c-evidence-tests`, `doubtfire-web: feature/oidc-prototype-c` |
+| **C** | Email magic link (passwordless) | `feature/magic-link-prototype-c` | `doubtfire-api: feature/prototype-c-evidence-tests`, `doubtfire-web: feature/magic-link-prototype-c` |
 
 Each parent branch records the corresponding submodule commits so `git submodule update --init --recursive` lands the tree at the version evaluated in the report.
 
