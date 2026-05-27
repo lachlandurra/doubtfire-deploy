@@ -15,12 +15,15 @@ Each parent branch records the corresponding submodule commits so `git submodule
 ## Running a prototype
 
 1. Check out the prototype branch on this repo and run `git submodule update --init --recursive`.
-2. Copy `.devcontainer/devcontainer.env` and replace the placeholder values for the prototype you are running:
-   - **Prototype A** requires real values for `DF_OAUTH_GITHUB_CLIENT_ID`, `DF_OAUTH_GITHUB_CLIENT_SECRET`, `DF_OAUTH_GOOGLE_CLIENT_ID`, and `DF_OAUTH_GOOGLE_CLIENT_SECRET`. Create OAuth apps at <https://github.com/settings/developers> and <https://console.cloud.google.com/apis/credentials> and register `http://localhost:3000/api/auth/oauth/<provider>/callback` as the authorised redirect.
-   - **Prototype B** requires a running Keycloak realm with Google federation configured. The Keycloak issuer URL and client credentials go in the `DF_KEYCLOAK_*` variables. See the report § IV-C for the realm export used during evaluation.
-   - **Prototype C** requires SMTP credentials (`SMTP_*`) so the magic link mailer can deliver. Any reliable inbox provider works; we used Mailtrap during evaluation.
+2. Edit `.devcontainer/devcontainer.env` for the prototype you are running. The file already ships with sensible defaults for everything except the secrets a marker has to provide:
+   - **Prototype A** — direct OIDC. Replace the placeholder values for `DF_OAUTH_GITHUB_CLIENT_ID`, `DF_OAUTH_GITHUB_CLIENT_SECRET`, `DF_OAUTH_GOOGLE_CLIENT_ID`, and `DF_OAUTH_GOOGLE_CLIENT_SECRET`. Register the OAuth apps at <https://github.com/settings/developers> and <https://console.cloud.google.com/apis/credentials> with `http://localhost:3000/api/auth/oauth/<provider>/callback` as the authorised redirect. `DF_OAUTH_PROVIDERS=google,github` controls which providers appear on the sign-in page; trim that list if you only want one. The scopes and redirect URIs in the file are correct as-is.
+   - **Prototype B** — Keycloak broker. The dev container brings up a local Keycloak at `http://doubtfire-keycloak:8080` (host-exposed as `http://localhost:8080`) using realm `doubtfire` and client `doubtfire-link`; the `DF_KEYCLOAK_*` variables and the local Keycloak client secret are already seeded so the OnTrack ↔ Keycloak leg works out of the box. To exercise the **Google → Keycloak** federation leg, replace `GOOGLE_CLIENT_ID` with a real Google OAuth app ID (the corresponding client secret is configured inside the Keycloak realm, not this env file). Skip that step if you only want to test username/password sign-in through Keycloak.
+   - **Prototype C** — magic link. Replace `DF_SMTP_USERNAME`, `DF_SMTP_PASSWORD`, and `DF_MAGIC_LINK_FROM_EMAIL` with credentials for any SMTP relay (the defaults assume Gmail via app password; Mailtrap, SendGrid, etc. all work — just adjust `DF_SMTP_ADDRESS` / `DF_SMTP_PORT` / `DF_SMTP_DOMAIN`). The link TTL, resend window, max attempts and callback URL are pre-configured in `DF_MAGIC_LINK_*`. **Note**: `DF_MAGIC_LINK_AUTO_PROVISION=false` is the fail-closed posture — magic links sent to addresses without an existing OnTrack user are rejected. This is the Prototype C counterpart to Prototype A's resolver change.
 3. Open the project in VS Code with the Dev Containers extension and run the standard dev tasks.
-4. Tests for each prototype live in the submodule's `test/` directory and run with `bundle exec rails test test/services/oauth/identity_resolver_test.rb` (Prototype A) or the equivalent paths for B and C.
+4. Tests for each prototype live in the submodule's `test/` directory:
+   - Prototype A: `bundle exec rails test test/services/oauth/identity_resolver_test.rb`
+   - Prototype B: see the keycloak coverage added in commit `934e6d16` (`test: add keycloak prototype evidence coverage`)
+   - Prototype C: see the magic-link coverage added in commit `7af9f8e8` (`test: add magic link authentication evidence coverage`)
 
 ## Evidence locations
 
